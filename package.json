@@ -1,0 +1,12 @@
+{
+  "name": "pinian",
+  "private": true,
+  "scripts": {
+    "build": "pnpm -r build",
+    "check": "biome check --write",
+    "format": "biome format --write"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "^1.9.3"
+  }
+}
