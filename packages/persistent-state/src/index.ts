@@ -1,19 +1,44 @@
 import type { PiniaPlugin, PiniaPluginContext, StateTree } from 'pinia';
-import type { PersistentStateManager } from 'src/PersistentStateManager';
-import { PersistentStateManagerFactory } from 'src/PersistentStateManagerFactory';
-import type { GlobalPersistentStateOptions } from 'src/types';
+import { PersistentStateManager } from 'src/core/PersistentStateManager';
+import type {
+  GlobalPersistentStateOptions,
+  PersistentStateOptions,
+} from 'src/types';
 
-export type { GlobalPersistentStateOptions };
+export * from 'src/types';
 
 export function createPersistentState<T extends StateTree>(
   globalOptions: GlobalPersistentStateOptions<T>,
 ): PiniaPlugin {
-  return (context: PiniaPluginContext): void => {
-    const managerFactory: PersistentStateManagerFactory<T> =
-      new PersistentStateManagerFactory(context.store, globalOptions);
-    const managers: PersistentStateManager<T>[] = managerFactory.create(
-      context.options?.persistentState,
-    );
+  return ({ store, options }: PiniaPluginContext): void => {
+    let managers: PersistentStateManager<T>[] = [];
+
+    if (Array.isArray(options?.persistentState)) {
+      managers = options?.persistentState.map(
+        (options: PersistentStateOptions<T>): PersistentStateManager<T> =>
+          new PersistentStateManager(store, {
+            ...globalOptions,
+            ...options,
+          }),
+      );
+    }
+
+    if (typeof options?.persistentState === 'object') {
+      managers = [
+        new PersistentStateManager(store, {
+          ...globalOptions,
+          ...options?.persistentState,
+        }),
+      ];
+    }
+
+    if (options?.persistentState === true) {
+      managers = [
+        new PersistentStateManager(store, {
+          ...globalOptions,
+        }),
+      ];
+    }
 
     for (const manager of managers) {
       manager.initialize();
