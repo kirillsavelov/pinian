@@ -3,6 +3,7 @@ import { StateProcessor } from 'src/core/StateProcessor';
 import type { DeepPartial, PersistentStateOptions } from 'src/types';
 
 export class PersistentState<T extends StateTree> {
+  private readonly prefix: string;
   private readonly key: string;
   private readonly storage: Storage;
   private readonly pickPaths: string[];
@@ -12,6 +13,7 @@ export class PersistentState<T extends StateTree> {
   private readonly deserialize: (state: string) => DeepPartial<T>;
 
   constructor(options: PersistentStateOptions<T>) {
+    const defaultPrefix: string = '';
     const defaultKey: string = 'default-key';
     const defaultStorage: Storage = localStorage;
     const defaultPickPaths: string[] = [];
@@ -34,6 +36,7 @@ export class PersistentState<T extends StateTree> {
     const defaultSerialize: (state: DeepPartial<T>) => string = JSON.stringify;
     const defaultDeserialize: (state: string) => DeepPartial<T> = JSON.parse;
 
+    this.prefix = options.prefix || defaultPrefix;
     this.key = options.key || defaultKey;
     this.storage = options.storage || defaultStorage;
     this.pickPaths = options.pickPaths || defaultPickPaths;
@@ -61,11 +64,11 @@ export class PersistentState<T extends StateTree> {
       .addStep((state: DeepPartial<T>): DeepPartial<T> => this.sanitize(state))
       .addStep((state: DeepPartial<T>): string => this.serialize(state));
 
-    this.storage.setItem(this.key, processor.process(state));
+    this.storage.setItem(this.getKey(), processor.process(state));
   }
 
   public load(): DeepPartial<T> | null {
-    const serializedState: string | null = this.storage.getItem(this.key);
+    const serializedState: string | null = this.storage.getItem(this.getKey());
 
     if (!serializedState) {
       return null;
@@ -89,6 +92,10 @@ export class PersistentState<T extends StateTree> {
       );
 
     return processor.process(serializedState);
+  }
+
+  private getKey(): string {
+    return `${this.prefix}${this.key}`;
   }
 
   private pick(state: DeepPartial<T>, paths: string[]): DeepPartial<T> {
