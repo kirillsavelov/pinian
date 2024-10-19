@@ -3,7 +3,7 @@ export type DeepPartial<T> = {
 };
 
 export interface GlobalPersistentStateOptions<T> {
-  prefix?: string;
+  key?: (id: string) => string;
   storage?: Storage;
   sanitize?: (state: DeepPartial<T>) => DeepPartial<T>;
   serialize?: (state: DeepPartial<T>) => string;
@@ -12,7 +12,6 @@ export interface GlobalPersistentStateOptions<T> {
 
 export interface PersistentStateOptions<T>
   extends GlobalPersistentStateOptions<T> {
-  key?: string;
   pickPaths?: string[];
   omitPaths?: string[];
 }

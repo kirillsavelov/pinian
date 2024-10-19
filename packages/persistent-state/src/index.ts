@@ -33,11 +33,7 @@ export function createPersistentState<T extends StateTree>(
     }
 
     if (options?.persistentState === true) {
-      managers = [
-        new PersistentStateManager(store, {
-          ...globalOptions,
-        }),
-      ];
+      managers = [new PersistentStateManager(store, globalOptions)];
     }
 
     for (const manager of managers) {
