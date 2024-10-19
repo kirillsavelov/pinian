@@ -4,8 +4,9 @@ export type DeepPartial<T> = {
 
 export interface GlobalPersistentStateOptions<T> {
   storage?: Storage;
-  serialize?: (data: DeepPartial<T>) => string;
-  deserialize?: (data: string) => DeepPartial<T>;
+  sanitize?: (state: DeepPartial<T>) => DeepPartial<T>;
+  serialize?: (state: DeepPartial<T>) => string;
+  deserialize?: (state: string) => DeepPartial<T>;
 }
 
 export interface PersistentStateOptions<T>

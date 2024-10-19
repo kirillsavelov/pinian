@@ -7,16 +7,40 @@ export class PersistentState<T extends StateTree> {
   private readonly storage: Storage;
   private readonly pickPaths: string[];
   private readonly omitPaths: string[];
+  private readonly sanitize: (state: DeepPartial<T>) => DeepPartial<T>;
   private readonly serialize: (state: DeepPartial<T>) => string;
-  private readonly deserialize: (data: string) => DeepPartial<T>;
+  private readonly deserialize: (state: string) => DeepPartial<T>;
 
   constructor(options: PersistentStateOptions<T>) {
-    this.key = options.key || 'default-key';
-    this.storage = options.storage || localStorage;
-    this.pickPaths = options.pickPaths || [];
-    this.omitPaths = options.omitPaths || [];
-    this.serialize = options.serialize || JSON.stringify;
-    this.deserialize = options.deserialize || JSON.parse;
+    const defaultKey: string = 'default-key';
+    const defaultStorage: Storage = localStorage;
+    const defaultPickPaths: string[] = [];
+    const defaultOmitPaths: string[] = [];
+    const defaultSanitize: (state: DeepPartial<T>) => DeepPartial<T> = (
+      state: DeepPartial<T>,
+    ): DeepPartial<T> =>
+      JSON.parse(
+        JSON.stringify(state, (key: string, value: any): any => {
+          if (typeof value === 'string') {
+            const element: HTMLDivElement = document.createElement('div');
+            element.innerText = value;
+
+            return element.innerHTML;
+          }
+
+          return value;
+        }),
+      );
+    const defaultSerialize: (state: DeepPartial<T>) => string = JSON.stringify;
+    const defaultDeserialize: (state: string) => DeepPartial<T> = JSON.parse;
+
+    this.key = options.key || defaultKey;
+    this.storage = options.storage || defaultStorage;
+    this.pickPaths = options.pickPaths || defaultPickPaths;
+    this.omitPaths = options.omitPaths || defaultOmitPaths;
+    this.sanitize = options.sanitize || defaultSanitize;
+    this.serialize = options.serialize || defaultSerialize;
+    this.deserialize = options.deserialize || defaultDeserialize;
   }
 
   public save(state: DeepPartial<T>): void {
@@ -26,12 +50,15 @@ export class PersistentState<T extends StateTree> {
     > = new StateProcessor();
 
     processor
-      .addStep((state: DeepPartial<T>): DeepPartial<T> => {
-        return this.pickPaths.length ? this.pick(state, this.pickPaths) : state;
-      })
-      .addStep((state: DeepPartial<T>): DeepPartial<T> => {
-        return this.omitPaths.length ? this.omit(state, this.omitPaths) : state;
-      })
+      .addStep(
+        (state: DeepPartial<T>): DeepPartial<T> =>
+          this.pickPaths.length ? this.pick(state, this.pickPaths) : state,
+      )
+      .addStep(
+        (state: DeepPartial<T>): DeepPartial<T> =>
+          this.omitPaths.length ? this.omit(state, this.omitPaths) : state,
+      )
+      .addStep((state: DeepPartial<T>): DeepPartial<T> => this.sanitize(state))
       .addStep((state: DeepPartial<T>): string => this.serialize(state));
 
     this.storage.setItem(this.key, processor.process(state));
@@ -51,12 +78,15 @@ export class PersistentState<T extends StateTree> {
 
     processor
       .addStep((state: string): DeepPartial<T> => this.deserialize(state))
-      .addStep((state: DeepPartial<T>): DeepPartial<T> => {
-        return this.pickPaths.length ? this.pick(state, this.pickPaths) : state;
-      })
-      .addStep((state: DeepPartial<T>): DeepPartial<T> => {
-        return this.omitPaths.length ? this.omit(state, this.omitPaths) : state;
-      });
+      .addStep((state: DeepPartial<T>): DeepPartial<T> => this.sanitize(state))
+      .addStep(
+        (state: DeepPartial<T>): DeepPartial<T> =>
+          this.pickPaths.length ? this.pick(state, this.pickPaths) : state,
+      )
+      .addStep(
+        (state: DeepPartial<T>): DeepPartial<T> =>
+          this.omitPaths.length ? this.omit(state, this.omitPaths) : state,
+      );
 
     return processor.process(serializedState);
   }
