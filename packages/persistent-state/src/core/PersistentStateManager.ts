@@ -9,10 +9,7 @@ export class PersistentStateManager<T extends StateTree> {
     private readonly store: Store<string, T>,
     options: PersistentStateOptions<T>,
   ) {
-    this.persistentState = new PersistentState({
-      ...options,
-      key: options.key || store.$id,
-    });
+    this.persistentState = new PersistentState(store.$id, options);
   }
 
   public initialize(): void {
