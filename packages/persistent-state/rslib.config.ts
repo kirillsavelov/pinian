@@ -2,7 +2,7 @@ import { defineConfig } from '@rslib/core';
 
 const shared = {
   dts: {
-    bundle: false,
+    bundle: true,
   },
 };
 

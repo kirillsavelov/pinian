@@ -6,8 +6,8 @@ export class PersistentStateManager<T extends StateTree> {
   private readonly persistentState: PersistentState<T>;
 
   constructor(
-    private readonly store: Store<string, T>,
-    options: PersistentStateOptions<T>,
+    private readonly store: Store,
+    options: PersistentStateOptions<T> = {},
   ) {
     this.persistentState = new PersistentState(store.$id, options);
   }

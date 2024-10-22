@@ -1,10 +1,14 @@
 import type { StateTree } from 'pinia';
 import { StateProcessor } from 'src/core/StateProcessor';
-import type { DeepPartial, PersistentStateOptions } from 'src/types';
+import type {
+  DeepPartial,
+  KeyValueStorage,
+  PersistentStateOptions,
+} from 'src/types';
 
 export class PersistentState<T extends StateTree> {
   private readonly key: string;
-  private readonly storage: Storage;
+  private readonly storage: KeyValueStorage;
   private readonly pickPaths: string[];
   private readonly omitPaths: string[];
   private readonly sanitize: (state: DeepPartial<T>) => DeepPartial<T>;
@@ -26,7 +30,7 @@ export class PersistentState<T extends StateTree> {
           JSON.stringify(state, (key: string, value: any): any => {
             if (typeof value === 'string') {
               const element: HTMLDivElement = document.createElement('div');
-              element.innerText = value;
+              element.textContent = value;
 
               return element.innerHTML;
             }
@@ -91,7 +95,7 @@ export class PersistentState<T extends StateTree> {
 
     for (const path of paths) {
       const keys: string[] = path.split('.');
-      let value: any = state;
+      let value: any = JSON.parse(JSON.stringify(state));
       let temp: any = result;
 
       for (const [index, key] of keys.entries()) {
@@ -114,7 +118,7 @@ export class PersistentState<T extends StateTree> {
   }
 
   private omit(state: DeepPartial<T>, paths: string[]): DeepPartial<T> {
-    const result: DeepPartial<T> = { ...state };
+    const result: DeepPartial<T> = JSON.parse(JSON.stringify(state));
 
     for (const path of paths) {
       const keys: string[] = path.split('.');
