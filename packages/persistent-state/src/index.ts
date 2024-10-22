@@ -8,7 +8,7 @@ import type {
 export * from 'src/types';
 
 export function createPersistentState<T extends StateTree>(
-  globalOptions: GlobalPersistentStateOptions<T>,
+  globalOptions: GlobalPersistentStateOptions<T> = {},
 ): PiniaPlugin {
   return ({ store, options }: PiniaPluginContext): void => {
     let managers: PersistentStateManager<T>[] = [];
@@ -21,18 +21,14 @@ export function createPersistentState<T extends StateTree>(
             ...options,
           }),
       );
-    }
-
-    if (typeof options?.persistentState === 'object') {
+    } else if (typeof options?.persistentState === 'object') {
       managers = [
         new PersistentStateManager(store, {
           ...globalOptions,
           ...options?.persistentState,
         }),
       ];
-    }
-
-    if (options?.persistentState === true) {
+    } else if (options?.persistentState === true) {
       managers = [new PersistentStateManager(store, globalOptions)];
     }
 
