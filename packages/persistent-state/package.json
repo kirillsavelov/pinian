@@ -1,6 +1,6 @@
 {
   "name": "@pinian/persistent-state",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "This plugin provides effortless state persistence for Pinia stores with a flexible, easy-to-use API. From simple defaults to advanced customizations like multi-storage and serializers, it streamlines state management, making it a perfect fit for any project.",
   "keywords": ["vue", "pinia", "pinia-plugin", "store", "persistence"],
   "homepage": "https://github.com/kirillsavelov/pinian",
