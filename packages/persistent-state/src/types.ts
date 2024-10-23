@@ -10,7 +10,6 @@ export type DeepPartial<T> = {
 export interface GlobalPersistentStateOptions<T> {
   key?: (id: string) => string;
   storage?: KeyValueStorage;
-  sanitize?: (state: DeepPartial<T>) => DeepPartial<T>;
   serialize?: (state: DeepPartial<T>) => string;
   deserialize?: (state: string) => DeepPartial<T>;
 }
