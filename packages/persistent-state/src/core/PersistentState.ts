@@ -11,7 +11,6 @@ export class PersistentState<T extends StateTree> {
   private readonly storage: KeyValueStorage;
   private readonly pickPaths: string[];
   private readonly omitPaths: string[];
-  private readonly sanitize: (state: DeepPartial<T>) => DeepPartial<T>;
   private readonly serialize: (state: DeepPartial<T>) => string;
   private readonly deserialize: (state: string) => DeepPartial<T>;
 
@@ -23,21 +22,6 @@ export class PersistentState<T extends StateTree> {
     this.storage = options.storage || localStorage;
     this.pickPaths = options.pickPaths || [];
     this.omitPaths = options.omitPaths || [];
-    this.sanitize =
-      options.sanitize ||
-      ((state: DeepPartial<T>): DeepPartial<T> =>
-        JSON.parse(
-          JSON.stringify(state, (key: string, value: any): any => {
-            if (typeof value === 'string') {
-              const element: HTMLDivElement = document.createElement('div');
-              element.textContent = value;
-
-              return element.innerHTML;
-            }
-
-            return value;
-          }),
-        ));
     this.serialize = options.serialize || JSON.stringify;
     this.deserialize = options.deserialize || JSON.parse;
   }
@@ -136,5 +120,20 @@ export class PersistentState<T extends StateTree> {
     }
 
     return result;
+  }
+
+  private sanitize(state: DeepPartial<T>): DeepPartial<T> {
+    return JSON.parse(
+      JSON.stringify(state, (key: string, value: any): any => {
+        if (typeof value === 'string') {
+          const element: HTMLDivElement = document.createElement('div');
+          element.textContent = value;
+
+          return element.innerHTML;
+        }
+
+        return value;
+      }),
+    );
   }
 }

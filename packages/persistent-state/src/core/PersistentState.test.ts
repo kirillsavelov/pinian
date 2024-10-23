@@ -112,34 +112,6 @@ describe('PersistentState', () => {
       });
     });
 
-    describe('with custom sanitize function', () => {
-      beforeEach(() => {
-        persistentState = new PersistentState(id, {
-          sanitize: (state: DeepPartial<StateTree>): DeepPartial<StateTree> => {
-            const sanitizedState: DeepPartial<StateTree> = { ...state };
-
-            if (sanitizedState.d) {
-              sanitizedState.d = 'sanitized';
-            }
-
-            return sanitizedState;
-          },
-        });
-      });
-
-      describe('when called with a state containing unsanitized data', () => {
-        it('should sanitize the state before saving', () => {
-          persistentState.save(state);
-          expect(localStorage.getItem(id)).toEqual(
-            JSON.stringify({
-              ...state,
-              d: 'sanitized',
-            }),
-          );
-        });
-      });
-    });
-
     describe('with custom serialize function', () => {
       beforeEach(() => {
         persistentState = new PersistentState(id, {
@@ -271,34 +243,6 @@ describe('PersistentState', () => {
           const loadedState: DeepPartial<StateTree> | null =
             persistentState.load();
           expect(loadedState).toEqual({ a: 1, b: {}, d: state.d });
-        });
-      });
-    });
-
-    describe('with custom sanitize function', () => {
-      beforeEach(() => {
-        persistentState = new PersistentState(id, {
-          sanitize: (state) => {
-            const sanitizedState: StateTree = { ...state };
-
-            if (sanitizedState.d) {
-              sanitizedState.d = 'sanitized';
-            }
-
-            return sanitizedState;
-          },
-        });
-        localStorage.setItem(id, JSON.stringify(state));
-      });
-
-      describe('when state contains unsanitized data', () => {
-        it('should sanitize the state after loading', () => {
-          const loadedState: DeepPartial<StateTree> | null =
-            persistentState.load();
-          expect(loadedState).toEqual({
-            ...state,
-            d: 'sanitized',
-          });
         });
       });
     });
