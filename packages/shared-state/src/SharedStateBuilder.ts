@@ -1,18 +1,18 @@
 import type { Store as PiniaStore, StateTree } from 'pinia';
-import { type Store, PiniaAdapter } from 'src/store';
+import { SharedState } from 'src/SharedState';
 import { type Channel, TabChannel } from 'src/channel';
 import { type Filter, PathFilter } from 'src/filter';
 import {
-  type Merger,
   DeepMerger,
+  type Merger,
   OverwriteMerger,
   ShallowMerger,
 } from 'src/merger';
-import { SharedState } from 'src/SharedState';
+import { PiniaAdapter, type Store } from 'src/store';
 import type {
   ChannelFn,
-  MergeStrategy,
   LocalSharedStateOptions,
+  MergeStrategy,
 } from 'src/types';
 
 export class SharedStateBuilder<T extends StateTree> {
