@@ -1,14 +1,15 @@
 import type { StateTree } from 'pinia';
-import type { Store } from 'src/store';
 import type { Channel, Message } from 'src/channel';
 import type { Filter } from 'src/filter';
 import type { Merger } from 'src/merger';
+import type { Store } from 'src/store';
 import type { DeepPartial } from 'src/types';
 
 export class SharedState<T extends StateTree> {
   private unsubscribe: (() => void) | null = null;
-  private isRemoteUpdate: boolean = false;
-  private lastUpdateTime: number = 0;
+  private isConnected = false;
+  private isRemoteUpdate = false;
+  private lastUpdateTime = 0;
 
   constructor(
     private readonly store: Store<T>,
@@ -18,17 +19,27 @@ export class SharedState<T extends StateTree> {
   ) {}
 
   public connect(): void {
+    if (this.isConnected) {
+      return;
+    }
+
+    this.isConnected = true;
     this.channel.connect();
     this.subscribe();
   }
 
   public disconnect(): void {
+    if (!this.isConnected) {
+      return;
+    }
+
     if (this.unsubscribe) {
       this.unsubscribe();
       this.unsubscribe = null;
     }
 
     this.channel.disconnect();
+    this.isConnected = false;
   }
 
   private subscribe(): void {

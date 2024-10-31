@@ -6,49 +6,41 @@ export interface Filter<T extends StateTree> {
 }
 
 export class PathFilter<T extends StateTree> implements Filter<T> {
-  constructor(
-    private readonly pickPaths: string[] = [],
-    private readonly omitPaths: string[] = [],
-  ) {}
+  private readonly pickedPaths: Set<string>;
+  private readonly omittedPaths: Set<string>;
+
+  constructor(pickPaths: string[] = [], omitPaths: string[] = []) {
+    this.pickedPaths = new Set(pickPaths);
+    this.omittedPaths = new Set(omitPaths);
+  }
 
   public filter(state: T): T | DeepPartial<T> {
-    if (!this.pickPaths.length && !this.omitPaths.length) {
+    if (!this.pickedPaths.size && !this.omittedPaths.size) {
       return state;
     }
 
-    let result: DeepPartial<T> = state as DeepPartial<T>;
+    const picked: T | DeepPartial<T> = this.pickedPaths.size
+      ? this.pick(state)
+      : state;
 
-    if (this.pickPaths.length) {
-      result = this.pickByPaths(result);
-    }
-
-    if (this.omitPaths.length) {
-      result = this.omitByPaths(result);
-    }
-
-    return result;
+    return this.omittedPaths.size ? this.omit(picked) : picked;
   }
 
-  private pickByPaths(state: T | DeepPartial<T>): DeepPartial<T> {
+  private pick(state: T | DeepPartial<T>, parentPath = ''): DeepPartial<T> {
     const result: DeepPartial<T> = {} as DeepPartial<T>;
 
-    for (const path of this.pickPaths) {
-      const keys: string[] = path.split('.');
-      let value: unknown = state;
-      let current: Record<string, unknown> = result;
+    for (const [key, value] of Object.entries<unknown>(state)) {
+      const currentPath: string = parentPath ? `${parentPath}.${key}` : key;
 
-      for (const [index, key] of keys.entries()) {
-        if (value && typeof value === 'object' && key in value) {
-          value = (value as Record<string, unknown>)[key];
+      if (this.isPickedPath(currentPath)) {
+        if (this.isNestedObject(value)) {
+          const picked: DeepPartial<StateTree> = this.pick(value, currentPath);
 
-          if (index === keys.length - 1) {
-            current[key] = value;
-          } else {
-            current[key] = current[key] || {};
-            current = current[key] as Record<string, unknown>;
+          if (Object.keys(picked).length > 0) {
+            result[key as keyof T] = picked as DeepPartial<T>[keyof T];
           }
         } else {
-          break;
+          result[key as keyof T] = value as DeepPartial<T>[keyof T];
         }
       }
     }
@@ -56,28 +48,49 @@ export class PathFilter<T extends StateTree> implements Filter<T> {
     return result;
   }
 
-  private omitByPaths(state: T | DeepPartial<T>): DeepPartial<T> {
-    const result: DeepPartial<T> = JSON.parse(
-      JSON.stringify(state),
-    ) as DeepPartial<T>;
+  private omit(state: T | DeepPartial<T>, parentPath = ''): DeepPartial<T> {
+    const result: DeepPartial<T> = {} as DeepPartial<T>;
 
-    for (const path of this.omitPaths) {
-      const keys: string[] = path.split('.');
-      let current: Record<string, unknown> = result;
+    for (const [key, value] of Object.entries<unknown>(state)) {
+      const currentPath: string = parentPath ? `${parentPath}.${key}` : key;
 
-      for (const [index, key] of keys.entries()) {
-        if (current && typeof current === 'object' && key in current) {
-          if (index === keys.length - 1) {
-            delete current[key];
-          } else {
-            current = current[key] as Record<string, unknown>;
+      if (!this.omittedPaths.has(currentPath)) {
+        if (this.isNestedObject(value)) {
+          const filtered: DeepPartial<StateTree> = this.omit(
+            value,
+            currentPath,
+          );
+
+          if (Object.keys(filtered).length > 0) {
+            result[key as keyof T] = filtered as DeepPartial<T>[keyof T];
           }
         } else {
-          break;
+          result[key as keyof T] = value as DeepPartial<T>[keyof T];
         }
       }
     }
 
     return result;
+  }
+
+  private isPickedPath(path: string): boolean {
+    if (this.pickedPaths.has(path)) {
+      return true;
+    }
+
+    for (const pickedPath of this.pickedPaths) {
+      if (
+        pickedPath.startsWith(`${path}.`) ||
+        path.startsWith(`${pickedPath}.`)
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  }
+
+  private isNestedObject(value: unknown): value is StateTree {
+    return typeof value === 'object' && value !== null && !Array.isArray(value);
   }
 }

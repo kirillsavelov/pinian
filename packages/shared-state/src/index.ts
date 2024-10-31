@@ -1,7 +1,10 @@
 import type { PiniaPlugin, PiniaPluginContext, StateTree } from 'pinia';
 import type { SharedState } from 'src/SharedState';
 import { SharedStateBuilder } from 'src/SharedStateBuilder';
-import { GlobalSharedStateOptions, LocalSharedStateOptions } from 'src/types';
+import type {
+  GlobalSharedStateOptions,
+  LocalSharedStateOptions,
+} from 'src/types';
 
 export * from 'src/types';
 
