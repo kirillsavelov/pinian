@@ -2,7 +2,20 @@
   "name": "@pinian/persistent-state",
   "version": "1.0.0",
   "description": "This plugin provides effortless state persistence for Pinia stores with a flexible, easy-to-use API. From simple defaults to advanced customizations like multi-storage and serializers, it streamlines state management, making it a perfect fit for any project.",
-  "keywords": ["vue", "pinia", "pinia-plugin", "store", "persistence"],
+  "keywords": [
+    "vue",
+    "pinia",
+    "pinia-plugin",
+    "store",
+    "persistence",
+    "persistent-state",
+    "storage",
+    "local-storage",
+    "session-storage",
+    "cache",
+    "offline",
+    "state-management"
+  ],
   "homepage": "https://github.com/kirillsavelov/pinian",
   "repository": {
     "type": "git",
@@ -32,14 +45,20 @@
   "files": ["dist", "LICENSE", "README.md"],
   "scripts": {
     "build": "rslib build",
-    "dev": "rslib build --watch"
+    "dev": "rslib build --watch",
+    "prepack": "pnpm build"
   },
   "devDependencies": {
-    "@rslib/core": "^0.0.13",
+    "@rslib/core": "^0.0.15",
     "pinia": "^2.2.4",
     "typescript": "^5.6.3"
   },
   "peerDependencies": {
-    "pinia": "^2.0.0"
+    "pinia": "^2"
+  },
+  "peerDependenciesMeta": {
+    "pinia": {
+      "optional": true
+    }
   }
 }
