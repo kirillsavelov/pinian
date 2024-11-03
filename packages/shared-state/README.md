@@ -11,7 +11,7 @@ With a flexible API and powerful synchronization options, it makes cross-tab sta
 - **Merge Strategy:** Customize how states are merged when conflicts occur
 - **Zero Dependencies:** Built with zero external dependencies for maximum compatibility
 
-## Quickstart
+## Quick Start
 
 1. Install the plugin:
 
