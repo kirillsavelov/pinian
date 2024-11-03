@@ -17,7 +17,7 @@ to advanced customizations like multi-storage and serializers, it streamlines st
 - **Zero Dependencies:** This plugin is built with zero external dependencies, ensuring minimal overhead and maximum
   compatibility with any project setup.
 
-## Quickstart
+## Quick Start
 
 1. Install the plugin:
 
