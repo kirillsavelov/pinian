@@ -11,10 +11,11 @@ export * from 'src/types';
 export function createPersistentState<T extends StateTree>(
   globalOptions: GlobalPersistentStateOptions<T> = {},
 ): PiniaPlugin {
-  const { ...commonOptions }: GlobalPersistentStateOptions<T> = globalOptions;
+  const { auto, ...commonOptions }: GlobalPersistentStateOptions<T> =
+    globalOptions;
 
   return ({ store, options }: PiniaPluginContext): void => {
-    if (!options.persistentState) {
+    if (!options.persistentState && auto !== true) {
       return;
     }
 

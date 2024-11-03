@@ -26,7 +26,9 @@ export interface PersistentStateOptions<T extends StateTree> {
 }
 
 export interface GlobalPersistentStateOptions<T extends StateTree>
-  extends PersistentStateOptions<T> {}
+  extends PersistentStateOptions<T> {
+  auto?: boolean;
+}
 
 export interface LocalPersistentStateOptions<T extends StateTree>
   extends PersistentStateOptions<T> {

@@ -51,6 +51,19 @@ describe('createPersistentState', () => {
     });
 
     describe('when called with global options', () => {
+      it('should create PersistentState for all stores when auto enabled', () => {
+        const globalOptions: GlobalPersistentStateOptions<StateTree> = {
+          auto: true,
+        };
+        const plugin: PiniaPlugin = createPersistentState(globalOptions);
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({}),
+        );
+        expect(persistentState.persist).toHaveBeenCalled();
+      });
+
       it('should pass key function to builder', () => {
         const keyFn: KeyFn = (id: string): string => `custom-${id}`;
         const globalOptions: GlobalPersistentStateOptions<StateTree> = {
