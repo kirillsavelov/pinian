@@ -4,174 +4,141 @@ import { SharedStateBuilder } from 'src/SharedStateBuilder';
 import { TabChannel } from 'src/channel';
 import { PathFilter } from 'src/filter';
 import { DeepMerger, OverwriteMerger, ShallowMerger } from 'src/merger';
-import { PiniaAdapter } from 'src/store';
+import type { Store } from 'src/store';
 import type { LocalSharedStateOptions, MergeStrategy } from 'src/types';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('src/store');
 vi.mock('src/channel');
-vi.mock('src/filter');
 vi.mock('src/merger');
+vi.mock('src/filter');
 
 describe('SharedStateBuilder', () => {
   const storeId: string = 'test-store';
   let piniaStore: PiniaStore;
+  let store: Store<StateTree>;
   let sharedStateBuilder: SharedStateBuilder<StateTree>;
 
   beforeEach(() => {
     piniaStore = {
       $id: storeId,
     } as unknown as PiniaStore;
+    store = {
+      getState: vi.fn(),
+      patchState: vi.fn(),
+      subscribe: vi.fn(),
+    } as unknown as Store<StateTree>;
     sharedStateBuilder = new SharedStateBuilder();
   });
 
   describe('setStore()', () => {
-    describe('when called', () => {
-      describe('with valid store', () => {
-        it('should create PiniaAdapter', () => {
-          sharedStateBuilder.setStore(piniaStore);
-          expect(PiniaAdapter).toHaveBeenCalledWith(piniaStore);
-        });
-      });
+    it('should save store when called with valid store', () => {
+      sharedStateBuilder.setStore(store);
+      expect(sharedStateBuilder['store']).toBe(store);
     });
   });
 
   describe('setChannel()', () => {
-    describe('when called', () => {
-      describe('with only storeId', () => {
-        it('should create TabChannel with default options', () => {
-          sharedStateBuilder.setChannel(storeId);
-          expect(TabChannel).toHaveBeenCalledWith(storeId, undefined);
-        });
-      });
-
-      describe('with custom channel function', () => {
-        it('should use custom channel name', () => {
-          const channelFn: (id: string) => string = (id: string) =>
-            `custom-${id}`;
-          sharedStateBuilder.setChannel(storeId, channelFn);
-          expect(TabChannel).toHaveBeenCalledWith(
-            `custom-${storeId}`,
-            undefined,
-          );
-        });
-      });
-
-      describe('with instant flag', () => {
-        it('should pass instant flag to TabChannel', () => {
-          sharedStateBuilder.setChannel(storeId, undefined, true);
-          expect(TabChannel).toHaveBeenCalledWith(storeId, true);
-        });
-      });
+    it('should create TabChannel with default options when called with only storeId', () => {
+      sharedStateBuilder.setChannel(storeId);
+      expect(TabChannel).toHaveBeenCalledWith(storeId, true);
     });
-  });
 
-  describe('setFilter()', () => {
-    describe('when called', () => {
-      describe('with pick and omit paths', () => {
-        it('should create PathFilter with paths', () => {
-          const pickPaths: string[] = ['foo'];
-          const omitPaths: string[] = ['bar'];
-          sharedStateBuilder.setFilter(pickPaths, omitPaths);
-          expect(PathFilter).toHaveBeenCalledWith(pickPaths, omitPaths);
-        });
-      });
+    it('should use custom channel name when called with custom channel function', () => {
+      const channelFn: (id: string) => string = (id: string) => `custom-${id}`;
+      sharedStateBuilder.setChannel(storeId, channelFn);
+      expect(TabChannel).toHaveBeenCalledWith(`custom-${storeId}`, true);
+    });
 
-      describe('without paths', () => {
-        it('should create default PathFilter', () => {
-          sharedStateBuilder.setFilter();
-          expect(PathFilter).toHaveBeenCalledWith(undefined, undefined);
-        });
-      });
+    it('should pass instant flag to TabChannel when called with instant flag', () => {
+      sharedStateBuilder.setChannel(storeId, undefined, true);
+      expect(TabChannel).toHaveBeenCalledWith(storeId, true);
     });
   });
 
   describe('setMerger()', () => {
-    describe('when called', () => {
-      describe('with overwrite strategy', () => {
-        it('should create OverwriteMerger', () => {
-          sharedStateBuilder.setMerger('overwrite');
-          expect(OverwriteMerger).toHaveBeenCalled();
-        });
-      });
+    it('should create OverwriteMerger when called without merge strategy', () => {
+      sharedStateBuilder.setMerger();
+      expect(OverwriteMerger).toHaveBeenCalled();
+    });
 
-      describe('with shallow strategy', () => {
-        it('should create ShallowMerger', () => {
-          sharedStateBuilder.setMerger('shallow');
-          expect(ShallowMerger).toHaveBeenCalled();
-        });
-      });
+    it('should create OverwriteMerger when called with overwrite strategy', () => {
+      sharedStateBuilder.setMerger('overwrite');
+      expect(OverwriteMerger).toHaveBeenCalled();
+    });
 
-      describe('with deep strategy', () => {
-        it('should create DeepMerger', () => {
-          sharedStateBuilder.setMerger('deep');
-          expect(DeepMerger).toHaveBeenCalled();
-        });
-      });
+    it('should create ShallowMerger when called with shallow strategy', () => {
+      sharedStateBuilder.setMerger('shallow');
+      expect(ShallowMerger).toHaveBeenCalled();
+    });
 
-      describe('with custom merge function', () => {
-        it('should use custom merger', () => {
-          const customMerge: MergeStrategy<StateTree> = (
-            oldState: StateTree,
-            newState: StateTree,
-          ) => ({ ...oldState, ...newState }) as StateTree;
-          sharedStateBuilder.setMerger(customMerge);
-          expect(sharedStateBuilder['merger']?.merge).toBe(customMerge);
-        });
-      });
+    it('should create DeepMerger when called with deep strategy', () => {
+      sharedStateBuilder.setMerger('deep');
+      expect(DeepMerger).toHaveBeenCalled();
+    });
 
-      describe('without merge strategy', () => {
-        it('should create OverwriteMerger', () => {
-          sharedStateBuilder.setMerger();
-          expect(OverwriteMerger).toHaveBeenCalled();
-        });
-      });
+    it('should create custom merger when called with custom merge function', () => {
+      const customMerge: MergeStrategy<StateTree> = (
+        oldState: StateTree,
+        newState: StateTree,
+      ) => ({ ...oldState, ...newState }) as StateTree;
+      sharedStateBuilder.setMerger(customMerge);
+      expect(sharedStateBuilder['merger']?.merge).toBe(customMerge);
+    });
+  });
+
+  describe('setFilter()', () => {
+    it('should create PathFilter with empty paths when called with no arguments', () => {
+      sharedStateBuilder.setFilter();
+      expect(PathFilter).toHaveBeenCalledWith([], []);
+    });
+
+    it('should create PathFilter with provided paths when called with paths', () => {
+      const pickPaths: string[] = ['foo'];
+      const omitPaths: string[] = ['bar'];
+      sharedStateBuilder.setFilter(pickPaths, omitPaths);
+      expect(PathFilter).toHaveBeenCalledWith(pickPaths, omitPaths);
     });
   });
 
   describe('build()', () => {
-    describe('when called', () => {
-      describe('with complete configuration', () => {
-        it('should create SharedState instance', () => {
-          sharedStateBuilder
-            .setStore(piniaStore)
-            .setChannel(storeId)
-            .setFilter()
-            .setMerger();
+    it('should create SharedState when called with complete configuration', () => {
+      sharedStateBuilder
+        .setStore(store)
+        .setChannel(storeId)
+        .setMerger()
+        .setFilter();
+      const sharedState: SharedState<StateTree> = sharedStateBuilder.build();
+      expect(sharedState).toBeDefined();
+    });
 
-          const sharedState: SharedState<StateTree> =
-            sharedStateBuilder.build();
-          expect(sharedState).toBeDefined();
-        });
-      });
-
-      describe('with incomplete configuration', () => {
-        it('should throw error', () => {
-          expect(() => sharedStateBuilder.build()).toThrow(
-            'SharedState is not configured properly',
-          );
-        });
-      });
+    it('should throw error when called with incomplete configuration', () => {
+      expect(() => sharedStateBuilder.build()).toThrow(
+        'SharedState is not configured properly',
+      );
     });
   });
 
   describe('fromOptions()', () => {
-    describe('when called', () => {
-      describe('with full options', () => {
-        it('should create configured SharedState', () => {
-          const options: LocalSharedStateOptions<StateTree> = {
-            channel: (id: string) => `custom-${id}`,
-            instant: true,
-            pickPaths: ['foo'],
-            omitPaths: ['bar'],
-            mergeStrategy: 'deep',
-          };
+    it('should create SharedState with custom configuration when all options are provided', () => {
+      const options: LocalSharedStateOptions<StateTree> = {
+        channel: (id: string) => `custom-${id}`,
+        instant: true,
+        mergeStrategy: 'deep',
+        pickPaths: ['foo'],
+        omitPaths: ['bar'],
+      };
+      const sharedState: SharedState<StateTree> =
+        SharedStateBuilder.fromOptions(piniaStore, options);
+      expect(sharedState).toBeDefined();
+    });
 
-          const sharedState: SharedState<StateTree> =
-            SharedStateBuilder.fromOptions(piniaStore, options);
-          expect(sharedState).toBeDefined();
-        });
-      });
+    it('should create SharedState with default configuration when no options are provided', () => {
+      const options: LocalSharedStateOptions<StateTree> = {};
+      const sharedState: SharedState<StateTree> =
+        SharedStateBuilder.fromOptions(piniaStore, options);
+      expect(sharedState).toBeDefined();
+      expect(PathFilter).toHaveBeenCalledWith([], []);
     });
   });
 });

@@ -13,41 +13,43 @@ import type {
   ChannelFn,
   LocalSharedStateOptions,
   MergeStrategy,
+  MergeStrategyType,
 } from 'src/types';
 
 export class SharedStateBuilder<T extends StateTree> {
+  private static readonly DEFAULT_OPTIONS = {
+    channel: (id: string): string => id,
+    instant: true,
+    mergeStrategy: 'overwrite' as MergeStrategyType,
+    pickPaths: [] as string[],
+    omitPaths: [] as string[],
+  };
+
   private store?: Store<T>;
   private channel?: Channel<T>;
   private filter?: Filter<T>;
   private merger?: Merger<T>;
 
-  public setStore(store: PiniaStore<string, T>): SharedStateBuilder<T> {
-    this.store = new PiniaAdapter(store);
+  public setStore(store: Store<T>): SharedStateBuilder<T> {
+    this.store = store;
 
     return this;
   }
 
   public setChannel(
     storeId: string,
-    channelFn?: ChannelFn,
-    instant?: boolean,
+    channelFn: ChannelFn = SharedStateBuilder.DEFAULT_OPTIONS.channel,
+    instant: boolean = SharedStateBuilder.DEFAULT_OPTIONS.instant,
   ): SharedStateBuilder<T> {
-    const name: string = channelFn ? channelFn(storeId) : storeId;
-    this.channel = new TabChannel(name, instant);
+    this.channel = new TabChannel(channelFn(storeId), instant);
 
     return this;
   }
 
-  public setFilter(
-    pickPaths?: string[],
-    omitPaths?: string[],
+  public setMerger(
+    strategy: MergeStrategy<T> = SharedStateBuilder.DEFAULT_OPTIONS
+      .mergeStrategy,
   ): SharedStateBuilder<T> {
-    this.filter = new PathFilter(pickPaths, omitPaths);
-
-    return this;
-  }
-
-  public setMerger(strategy?: MergeStrategy<T>): SharedStateBuilder<T> {
     if (typeof strategy === 'function') {
       this.merger = { merge: strategy };
 
@@ -55,6 +57,9 @@ export class SharedStateBuilder<T extends StateTree> {
     }
 
     switch (strategy) {
+      case 'overwrite':
+        this.merger = new OverwriteMerger();
+        break;
       case 'shallow':
         this.merger = new ShallowMerger();
         break;
@@ -62,18 +67,26 @@ export class SharedStateBuilder<T extends StateTree> {
         this.merger = new DeepMerger();
         break;
       default:
-        this.merger = new OverwriteMerger();
     }
 
     return this;
   }
 
+  public setFilter(
+    pickPaths: string[] = SharedStateBuilder.DEFAULT_OPTIONS.pickPaths,
+    omitPaths: string[] = SharedStateBuilder.DEFAULT_OPTIONS.omitPaths,
+  ): SharedStateBuilder<T> {
+    this.filter = new PathFilter(pickPaths, omitPaths);
+
+    return this;
+  }
+
   public build(): SharedState<T> {
-    if (!this.store || !this.channel || !this.filter || !this.merger) {
+    if (!this.store || !this.channel || !this.merger || !this.filter) {
       throw new Error('SharedState is not configured properly');
     }
 
-    return new SharedState(this.store, this.channel, this.filter, this.merger);
+    return new SharedState(this.store, this.channel, this.merger, this.filter);
   }
 
   public static fromOptions<T extends StateTree>(
@@ -81,10 +94,10 @@ export class SharedStateBuilder<T extends StateTree> {
     options: LocalSharedStateOptions<T>,
   ): SharedState<T> {
     return new SharedStateBuilder()
-      .setStore(store)
+      .setStore(new PiniaAdapter(store))
       .setChannel(store.$id, options.channel, options.instant)
-      .setFilter(options.pickPaths, options.omitPaths)
       .setMerger(options.mergeStrategy)
+      .setFilter(options.pickPaths, options.omitPaths)
       .build();
   }
 }

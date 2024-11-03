@@ -1,25 +1,25 @@
 import type { Store as PiniaStore, StateTree } from 'pinia';
 import type { DeepPartial } from 'src/types';
 
-export interface Store<T extends StateTree> {
-  state: T;
-  patch<S extends T | DeepPartial<T>>(state: S): void;
-  subscribe(handler: () => void): () => void;
+export interface Store<T> {
+  getState(): T;
+  patchState(partialState: T | DeepPartial<T>): void;
+  subscribe(callback: () => void): () => void;
 }
 
 export class PiniaAdapter<T extends StateTree> implements Store<T> {
-  constructor(private readonly store: PiniaStore<string, T>) {}
+  constructor(private readonly store: PiniaStore) {}
 
-  public get state(): T {
+  public getState(): T {
     return this.toRaw(this.store.$state as T);
   }
 
-  public patch<S extends T | DeepPartial<T>>(state: S): void {
-    this.store.$patch(state);
+  public patchState(partialState: DeepPartial<T>): void {
+    this.store.$patch(partialState);
   }
 
-  public subscribe(handler: () => void): () => void {
-    return this.store.$subscribe(() => handler());
+  public subscribe(callback: () => void): () => void {
+    return this.store.$subscribe(() => callback());
   }
 
   private toRaw(state: T): T {
