@@ -50,134 +50,118 @@ describe('createSharedState', () => {
       vi.mocked(SharedStateBuilder.fromOptions).mockReturnValue(sharedState);
     });
 
-    describe('with global options', () => {
-      describe('with auto enabled', () => {
-        it('should create SharedState for all stores', () => {
-          const globalOptions: GlobalSharedStateOptions<StateTree> = {
-            auto: true,
-          };
-
-          const plugin: PiniaPlugin = createSharedState(globalOptions);
-          plugin(context);
-
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({}),
-          );
-          expect(sharedState.connect).toHaveBeenCalled();
-        });
+    describe('when called with global options', () => {
+      it('should create SharedState for all stores when auto enabled', () => {
+        const globalOptions: GlobalSharedStateOptions<StateTree> = {
+          auto: true,
+        };
+        const plugin: PiniaPlugin = createSharedState(globalOptions);
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({}),
+        );
+        expect(sharedState.connect).toHaveBeenCalled();
       });
 
-      describe('with channel function', () => {
-        it('should pass channel function to builder', () => {
-          const channelFn: ChannelFn = (id: string) => `custom-${id}`;
-          const globalOptions: GlobalSharedStateOptions<StateTree> = {
-            channel: channelFn,
-          };
-          const plugin: PiniaPlugin = createSharedState(globalOptions);
-          context.options.sharedState = true;
-          plugin(context);
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({ channel: channelFn }),
-          );
-        });
+      it('should pass channel function to builder', () => {
+        const channelFn: ChannelFn = (id: string) => `custom-${id}`;
+        const globalOptions: GlobalSharedStateOptions<StateTree> = {
+          channel: channelFn,
+        };
+        const plugin: PiniaPlugin = createSharedState(globalOptions);
+        context.options.sharedState = true;
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ channel: channelFn }),
+        );
       });
 
-      describe('with instant flag', () => {
-        it('should pass instant flag to builder', () => {
-          const globalOptions: GlobalSharedStateOptions<StateTree> = {
-            instant: true,
-          };
-          const plugin: PiniaPlugin = createSharedState(globalOptions);
-          context.options.sharedState = true;
-          plugin(context);
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({ instant: true }),
-          );
-        });
+      it('should pass instant flag to builder', () => {
+        const globalOptions: GlobalSharedStateOptions<StateTree> = {
+          instant: true,
+        };
+        const plugin: PiniaPlugin = createSharedState(globalOptions);
+        context.options.sharedState = true;
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ instant: true }),
+        );
       });
 
-      describe('with merge strategy', () => {
-        it('should pass merge strategy to builder', () => {
-          const mergeStrategy: MergeStrategy<StateTree> = 'deep';
-          const globalOptions: GlobalSharedStateOptions<StateTree> = {
-            mergeStrategy,
-          };
-          const plugin: PiniaPlugin = createSharedState(globalOptions);
-          context.options.sharedState = true;
-          plugin(context);
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({ mergeStrategy }),
-          );
-        });
+      it('should pass merge strategy to builder', () => {
+        const mergeStrategy: MergeStrategy<StateTree> = 'deep';
+        const globalOptions: GlobalSharedStateOptions<StateTree> = {
+          mergeStrategy,
+        };
+        const plugin: PiniaPlugin = createSharedState(globalOptions);
+        context.options.sharedState = true;
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ mergeStrategy }),
+        );
       });
     });
 
-    describe('with local options', () => {
-      describe('with pick paths', () => {
-        it('should pass pick paths to builder', () => {
-          const localOptions: LocalSharedStateOptions<StateTree> = {
-            pickPaths: ['foo', 'bar'],
-          };
-          context.options.sharedState = localOptions;
-          const plugin: PiniaPlugin = createSharedState();
-          plugin(context);
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({ pickPaths: ['foo', 'bar'] }),
-          );
-        });
+    describe('when called with local options', () => {
+      it('should pass pick paths to builder', () => {
+        context.options.sharedState = {
+          pickPaths: ['foo', 'bar'],
+        };
+        const plugin: PiniaPlugin = createSharedState();
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ pickPaths: ['foo', 'bar'] }),
+        );
       });
 
-      describe('with omit paths', () => {
-        it('should pass omit paths to builder', () => {
-          const localOptions: LocalSharedStateOptions<StateTree> = {
-            omitPaths: ['baz', 'qux'],
-          };
-          context.options.sharedState = localOptions;
-          const plugin: PiniaPlugin = createSharedState();
-          plugin(context);
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({ omitPaths: ['baz', 'qux'] }),
-          );
-        });
+      it('should pass omit paths to builder', () => {
+        context.options.sharedState = {
+          omitPaths: ['baz', 'qux'],
+        };
+        const plugin: PiniaPlugin = createSharedState();
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ omitPaths: ['baz', 'qux'] }),
+        );
       });
+    });
 
-      describe('with combined options', () => {
-        it('should override global options with local options', () => {
-          const channelFn: ChannelFn = (id: string) => `global-${id}`;
-          const localChannelFn: ChannelFn = (id: string) => `local-${id}`;
-          const globalOptions: GlobalSharedStateOptions<StateTree> = {
-            channel: channelFn,
-            mergeStrategy: 'deep',
-            instant: false,
-          };
-          const localOptions: LocalSharedStateOptions<StateTree> = {
+    describe('when called with combined options', () => {
+      it('should override global options with local options', () => {
+        const channelFn: ChannelFn = (id: string) => `global-${id}`;
+        const localChannelFn: ChannelFn = (id: string) => `local-${id}`;
+        const globalOptions: GlobalSharedStateOptions<StateTree> = {
+          channel: channelFn,
+          mergeStrategy: 'deep',
+          instant: false,
+        };
+        const localOptions: LocalSharedStateOptions<StateTree> = {
+          channel: localChannelFn,
+          instant: true,
+          pickPaths: ['foo'],
+        };
+        context.options.sharedState = localOptions;
+        const plugin: PiniaPlugin = createSharedState(globalOptions);
+        plugin(context);
+        expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({
             channel: localChannelFn,
+            mergeStrategy: 'deep',
             instant: true,
             pickPaths: ['foo'],
-          };
-          context.options.sharedState = localOptions;
-          const plugin: PiniaPlugin = createSharedState(globalOptions);
-          plugin(context);
-          expect(SharedStateBuilder.fromOptions).toHaveBeenCalledWith(
-            store,
-            expect.objectContaining({
-              channel: localChannelFn,
-              mergeStrategy: 'deep',
-              instant: true,
-              pickPaths: ['foo'],
-            }),
-          );
-        });
+          }),
+        );
       });
     });
 
-    describe('with no options', () => {
+    describe('when called with no options', () => {
       it('should not create SharedState', () => {
         const plugin: PiniaPlugin = createSharedState();
         plugin(context);

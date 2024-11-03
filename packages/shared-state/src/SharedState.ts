@@ -14,8 +14,8 @@ export class SharedState<T extends StateTree> {
   constructor(
     private readonly store: Store<T>,
     private readonly channel: Channel<T>,
-    private readonly filter: Filter<T>,
     private readonly merger: Merger<T>,
+    private readonly filter: Filter<T>,
   ) {}
 
   public connect(): void {
@@ -67,7 +67,7 @@ export class SharedState<T extends StateTree> {
 
   private broadcastCurrentState(): void {
     const currentState: T | DeepPartial<T> = this.filter.filter(
-      this.store.state,
+      this.store.getState(),
     );
 
     this.channel.broadcast(currentState);
@@ -77,13 +77,13 @@ export class SharedState<T extends StateTree> {
     this.isRemoteUpdate = true;
     this.lastUpdateTime = message.time;
     const currentState: T | DeepPartial<T> = this.filter.filter(
-      this.store.state,
+      this.store.getState(),
     );
     const mergedState: T | DeepPartial<T> = this.merger.merge(
       currentState,
       message.state,
     );
 
-    this.store.patch(mergedState);
+    this.store.patchState(mergedState);
   }
 }

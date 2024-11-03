@@ -14,22 +14,20 @@ export function createSharedState<T extends StateTree>(
   const { auto, ...commonOptions }: GlobalSharedStateOptions<T> = globalOptions;
 
   return ({ store, options }: PiniaPluginContext): void => {
-    if (
-      typeof options.sharedState !== 'object' &&
-      options.sharedState !== true &&
-      auto !== true
-    ) {
+    if (!options.sharedState && auto !== true) {
       return;
     }
 
-    const localOptions: LocalSharedStateOptions<T> = {
-      ...commonOptions,
-      ...(typeof options.sharedState === 'object' ? options.sharedState : {}),
-    };
-    const sharedState: SharedState<T> = SharedStateBuilder.fromOptions(
-      store,
-      localOptions,
-    );
+    let sharedState: SharedState<T>;
+
+    if (typeof options.sharedState === 'object') {
+      sharedState = SharedStateBuilder.fromOptions(store, {
+        ...commonOptions,
+        ...options.sharedState,
+      });
+    } else {
+      sharedState = SharedStateBuilder.fromOptions(store, commonOptions);
+    }
 
     sharedState.connect();
 

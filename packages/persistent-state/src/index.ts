@@ -20,7 +20,7 @@ export function createPersistentState<T extends StateTree>(
 
     let persistentStates: PersistentState<T>[] = [];
 
-    if (Array.isArray(options?.persistentState)) {
+    if (Array.isArray(options.persistentState)) {
       persistentStates = options.persistentState.map(
         (localOptions: LocalPersistentStateOptions<T>): PersistentState<T> =>
           PersistentStateBuilder.fromOptions(store, {
@@ -28,14 +28,14 @@ export function createPersistentState<T extends StateTree>(
             ...localOptions,
           }),
       );
-    } else if (typeof options?.persistentState === 'object') {
+    } else if (typeof options.persistentState === 'object') {
       persistentStates = [
         PersistentStateBuilder.fromOptions(store, {
           ...commonOptions,
           ...options.persistentState,
         }),
       ];
-    } else if (options?.persistentState === true) {
+    } else {
       persistentStates = [
         PersistentStateBuilder.fromOptions(store, commonOptions),
       ];

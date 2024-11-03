@@ -99,7 +99,7 @@ describe('PersistentStateBuilder', () => {
   });
 
   describe('build()', () => {
-    it('should create PersistentState instance when called with complete configuration', () => {
+    it('should create PersistentState when called with complete configuration', () => {
       persistentStateBuilder
         .setStore(store)
         .setKey(storeId)

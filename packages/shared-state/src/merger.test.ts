@@ -29,11 +29,9 @@ describe('OverwriteMerger', () => {
   let overwriteMerger: OverwriteMerger<StateTree>;
 
   describe('merge()', () => {
-    describe('with different states', () => {
-      it('should completely overwrite old state with new state', () => {
-        overwriteMerger = new OverwriteMerger<StateTree>();
-        expect(overwriteMerger.merge(oldState, newState)).toBe(newState);
-      });
+    it('should completely overwrite old state with new state when called with different states', () => {
+      overwriteMerger = new OverwriteMerger<StateTree>();
+      expect(overwriteMerger.merge(oldState, newState)).toBe(newState);
     });
   });
 });
@@ -46,19 +44,17 @@ describe('ShallowMerger', () => {
   });
 
   describe('merge()', () => {
-    describe('with nested objects', () => {
-      it('should merge only top-level properties', () => {
-        const result: StateTree = shallowMerger.merge(oldState, newState);
-        expect(result).toEqual({
-          ...oldState,
-          ...newState,
-        });
+    it('should merge only top-level properties when called with nested objects', () => {
+      const result: StateTree = shallowMerger.merge(oldState, newState);
+      expect(result).toEqual({
+        ...oldState,
+        ...newState,
       });
+    });
 
-      it('should overwrite nested objects entirely', () => {
-        const result: StateTree = shallowMerger.merge(oldState, newState);
-        expect(result.nested).toBe(newState.nested);
-      });
+    it('should overwrite nested objects entirely  when called with nested objects', () => {
+      const result: StateTree = shallowMerger.merge(oldState, newState);
+      expect(result.nested).toBe(newState.nested);
     });
   });
 });
@@ -71,59 +67,51 @@ describe('DeepMerger', () => {
   });
 
   describe('merge()', () => {
-    describe('with nested objects', () => {
-      it('should merge objects recursively', () => {
-        const result: StateTree = deepMerger.merge(oldState, newState);
-        expect(result).toEqual({
-          a: 1,
-          b: 'new',
-          nested: {
-            x: false,
-            y: {
-              deep: 'new-value',
-            },
+    it('should merge objects recursively when called with nested objects', () => {
+      const result: StateTree = deepMerger.merge(oldState, newState);
+      expect(result).toEqual({
+        a: 1,
+        b: 'new',
+        nested: {
+          x: false,
+          y: {
+            deep: 'new-value',
           },
-          array: [1, 2, 3],
-        });
+        },
+        array: [1, 2, 3],
       });
     });
 
-    describe('with arrays', () => {
-      it('should replace arrays entirely', () => {
-        const stateWithNewArray: StateTree = {
-          ...oldState,
-          array: [4, 5],
-        };
-        const result: StateTree = deepMerger.merge(oldState, stateWithNewArray);
-        expect(result.array).toEqual([4, 5]);
-      });
+    it('should replace arrays entirely when called with arrays', () => {
+      const stateWithNewArray: StateTree = {
+        ...oldState,
+        array: [4, 5],
+      };
+      const result: StateTree = deepMerger.merge(oldState, stateWithNewArray);
+      expect(result.array).toEqual([4, 5]);
     });
 
-    describe('with non-object values', () => {
-      it('should overwrite with new primitive values', () => {
-        const stateWithString: StateTree = {
-          ...oldState,
-          nested: 'string',
-        };
-        const result: StateTree = deepMerger.merge(oldState, stateWithString);
-        expect(result.nested).toBe('string');
-      });
+    it('should overwrite with new primitive values when called with non-object values', () => {
+      const stateWithString: StateTree = {
+        ...oldState,
+        nested: 'string',
+      };
+      const result: StateTree = deepMerger.merge(oldState, stateWithString);
+      expect(result.nested).toBe('string');
     });
 
-    describe('with null values', () => {
-      it('should preserve original non-null values', () => {
-        const stateWithNulls: StateTree = {
-          ...oldState,
-          b: null,
-          nested: {
-            ...oldState.nested,
-            x: null,
-          },
-        };
-        const result: StateTree = deepMerger.merge(oldState, stateWithNulls);
-        expect(result.b).toBe(oldState.b);
-        expect(result.nested.x).toBe(oldState.nested.x);
-      });
+    it('should preserve original non-null values when called with null values', () => {
+      const stateWithNulls: StateTree = {
+        ...oldState,
+        b: null,
+        nested: {
+          ...oldState.nested,
+          x: null,
+        },
+      };
+      const result: StateTree = deepMerger.merge(oldState, stateWithNulls);
+      expect(result.b).toBe(oldState.b);
+      expect(result.nested.x).toBe(oldState.nested.x);
     });
   });
 });

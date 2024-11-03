@@ -22,50 +22,42 @@ describe('PiniaAdapter', () => {
     piniaAdapter = new PiniaAdapter(piniaStore);
   });
 
-  describe('state', () => {
-    describe('when accessed', () => {
-      it('should return raw state', () => {
-        expect(piniaAdapter.state).toEqual(initialState);
-        expect(piniaAdapter.state).not.toBe(initialState);
-      });
+  describe('getState()', () => {
+    it('should return store state when called', () => {
+      expect(piniaAdapter.getState()).toEqual(initialState);
     });
   });
 
-  describe('patch()', () => {
-    describe('with full state', () => {
-      it('should call store patch with full state', () => {
-        const newState: StateTree = { foo: 'baz' };
-        piniaAdapter.patch(newState);
-        expect(piniaStore.$patch).toHaveBeenCalledWith(newState);
-      });
+  describe('patchState()', () => {
+    it('should patch store state when called with full state', () => {
+      const fullState: StateTree = { foo: 'baz' };
+      piniaAdapter.patchState(fullState);
+      expect(piniaStore.$patch).toHaveBeenCalledWith(fullState);
     });
 
-    describe('with partial state', () => {
-      it('should call store patch with partial update', () => {
-        const partialState: DeepPartial<StateTree> = {
-          nested: { value: 456 },
-        };
-        piniaAdapter.patch(partialState);
-        expect(piniaStore.$patch).toHaveBeenCalledWith(partialState);
-      });
+    it('should patch store state when called with partial state', () => {
+      const partialState: DeepPartial<StateTree> = {
+        nested: { value: 456 },
+      };
+      piniaAdapter.patchState(partialState);
+      expect(piniaStore.$patch).toHaveBeenCalledWith(partialState);
     });
   });
 
   describe('subscribe()', () => {
-    describe('when subscribing', () => {
-      it('should register handler with store', () => {
-        const handler: () => void = () => {};
-        piniaAdapter.subscribe(handler);
-        expect(piniaStore.$subscribe).toHaveBeenCalled();
-      });
+    it('should subscribe to store changes when called', () => {
+      const callback: Mock = vi.fn();
+      piniaAdapter.subscribe(callback);
+      expect(piniaStore.$subscribe).toHaveBeenCalled();
+    });
 
-      it('should return unsubscribe function', () => {
-        const unsubscribe: Mock = vi.fn();
-        (piniaStore.$subscribe as any).mockReturnValue(unsubscribe);
-        const handler: () => void = () => {};
-        const result: () => void = piniaAdapter.subscribe(handler);
-        expect(result).toBe(unsubscribe);
-      });
+    it('should call callback when store changes when called', () => {
+      const callback: Mock = vi.fn();
+      piniaStore.$subscribe = vi
+        .fn()
+        .mockImplementation((fn: Mock): Mock => fn());
+      piniaAdapter.subscribe(callback);
+      expect(callback).toHaveBeenCalled();
     });
   });
 });
