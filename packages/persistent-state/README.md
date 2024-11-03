@@ -44,10 +44,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
-    },
-    settings: {
-      theme: 'dark',
     },
   }),
   persistentState: true,
@@ -75,12 +71,13 @@ import { createPersistentStatePlugin } from '@pinian/persistent-state';
 
 const pinia = createPinia();
 pinia.use(createPersistentStatePlugin({
+  auto: true,
+  key: (id) => `v1.0.0-${id}`,
+  storage: localStorage,
   serialize: (state) => btoa(JSON.stringify(state)),
   deserialize: (state) => JSON.parse(atob(state)),
 }));
 ```
-
-In this example, all stores will follow the global configuration unless you override it locally for specific stores.
 
 ### Local Configuration
 
@@ -96,10 +93,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
-    },
-    settings: {
-      theme: 'dark',
     },
   }),
   persistentState: true,
@@ -116,14 +109,24 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
+      password: 'secret',
     },
     settings: {
       theme: 'dark',
     },
   }),
   persistentState: {
-    storage: sessionStorage,
+    key: (id) => `v1.0.0-${id}`,
+    storage: localStorage,
+    serialize: (state) => btoa(JSON.stringify(state)),
+    deserialize: (state) => JSON.parse(atob(state)),
+    pickPaths: [
+      'user',
+      'settings',
+    ],
+    omitPaths: [
+      'user.password',
+    ],
   },
 });
 ```
@@ -138,7 +141,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
       password: 'secret',
     },
     settings: {
@@ -147,23 +149,64 @@ export const useStore = defineStore('profile', {
   }),
   persistentState: [
     {
+      key: (id) => `v1.0.0-${id}`,
       storage: localStorage,
+      serialize: (state) => btoa(JSON.stringify(state)),
+      deserialize: (state) => JSON.parse(atob(state)),
       pickPaths: [
-        'user.name',
-        'user.email',
+        'user',
+      ],
+      omitPaths: [
+        'user.password',
       ],
     },
     {
       storage: sessionStorage,
+      serialize: (state) => JSON.stringify(state),
+      deserialize: (state) => JSON.parse(state),
       pickPaths: [
-        'settings',
-      ],
+        'settings.theme',
+      ]
     },
   ],
 });
 ```
 
 ## Options
+
+### auto
+
+- **type**: `boolean`
+- **default**: `false`
+- **scope**: Global
+
+Defines whether state persistence should be enabled by default for all stores. This can be useful when you want to
+save the entire application state to browser storage without explicitly configuring each store.
+
+<details>
+<summary>Example</summary>
+
+```ts
+import { createPinia } from 'pinia';
+import { createPersistentStatePlugin } from '@pinian/persistent-state';
+
+const pinia = createPinia();
+pinia.use(createPersistentStatePlugin({
+  auto: true,
+}));
+
+export const useStore = defineStore('profile', {
+  state: () => ({
+    user: {
+      name: 'John Doe',
+    },
+  }),
+});
+```
+
+This configuration will automatically enable state persistence for all stores with the specified default settings. This
+ensures state preservation between page reloads without manual configuration for each store.
+</details>
 
 ### key
 
@@ -183,10 +226,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
-    },
-    settings: {
-      theme: 'dark',
     },
   }),
   persistentState: {
@@ -217,10 +256,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
-    },
-    settings: {
-      theme: 'dark',
     },
   }),
   persistentState: {
@@ -251,10 +286,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
-    },
-    settings: {
-      theme: 'dark',
     },
   }),
   persistentState: {
@@ -285,10 +316,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
-    },
-    settings: {
-      theme: 'dark',
     },
   }),
   persistentState: {
@@ -318,7 +345,6 @@ export const useStore = defineStore('profile', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
       password: 'secret',
     },
     settings: {
@@ -355,7 +381,6 @@ export const useStore = defineStore('main', {
   state: () => ({
     user: {
       name: 'John Doe',
-      email: 'john@example.com',
       password: 'secret',
     },
     settings: {
