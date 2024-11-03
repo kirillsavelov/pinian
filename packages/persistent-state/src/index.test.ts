@@ -1,127 +1,182 @@
-import type { PiniaPlugin, PiniaPluginContext, StateTree, Store } from 'pinia';
-import { PersistentStateManager } from 'src/core/PersistentStateManager';
+import type {
+  PiniaPlugin,
+  PiniaPluginContext,
+  Store as PiniaStore,
+  StateTree,
+} from 'pinia';
+import type { PersistentState } from 'src/PersistentState';
+import { PersistentStateBuilder } from 'src/PersistentStateBuilder';
 import { createPersistentState } from 'src/index';
 import type {
   GlobalPersistentStateOptions,
-  PersistentStateOptions,
+  KeyFn,
+  LocalPersistentStateOptions,
 } from 'src/types';
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { type Mock, beforeEach, describe, expect, it, vi } from 'vitest';
 
-vi.mock('src/core/PersistentStateManager');
+vi.mock('src/PersistentStateBuilder');
 
 describe('createPersistentState', () => {
-  const globalOptions: GlobalPersistentStateOptions<StateTree> = {
-    key: (id: string): string => id,
-    storage: localStorage,
-  };
-  const storeStub: Partial<Store> = {};
-  let plugin: PiniaPlugin;
+  describe('plugin()', () => {
+    const storeId: string = 'test-store';
+    let store: PiniaStore;
+    let context: PiniaPluginContext;
+    let persistentState: PersistentState<StateTree>;
+    let originalDispose: Mock;
 
-  beforeEach(() => {
-    vi.clearAllMocks();
-    plugin = createPersistentState(globalOptions);
-  });
+    beforeEach(() => {
+      vi.clearAllMocks();
 
-  describe('plugin', () => {
-    describe('with options.persistentState as an array', () => {
-      const options: PersistentStateOptions<StateTree>[] = [
-        { pickPaths: ['a'] },
-        { omitPaths: ['b'] },
-      ];
+      originalDispose = vi.fn();
+      store = {
+        $id: storeId,
+        $state: {},
+        $patch: vi.fn(),
+        $dispose: originalDispose,
+      } as unknown as PiniaStore;
+      context = {
+        store,
+        options: {},
+        app: null,
+        pinia: null,
+      } as unknown as PiniaPluginContext;
+      persistentState = {
+        persist: vi.fn(),
+        unpersist: vi.fn(),
+      } as unknown as PersistentState<StateTree>;
 
-      beforeEach(() => {
-        plugin({
-          store: storeStub,
-          options: {
-            persistentState: options,
-          },
-        } as PiniaPluginContext);
-      });
-
-      it('should create a PersistentStateManager for each option and initialize them', () => {
-        expect(PersistentStateManager).toHaveBeenCalledTimes(2);
-        expect(PersistentStateManager).toHaveBeenNthCalledWith(1, storeStub, {
-          ...globalOptions,
-          ...options[0],
-        });
-        expect(PersistentStateManager).toHaveBeenNthCalledWith(2, storeStub, {
-          ...globalOptions,
-          ...options[1],
-        });
-
-        const instances: PersistentStateManager<StateTree>[] = vi.mocked(
-          PersistentStateManager,
-        ).mock.instances;
-
-        expect(instances[0].initialize).toHaveBeenCalledTimes(1);
-        expect(instances[1].initialize).toHaveBeenCalledTimes(1);
-      });
+      vi.mocked(PersistentStateBuilder.fromOptions).mockReturnValue(
+        persistentState,
+      );
     });
 
-    describe('with options.persistentState as an object', () => {
-      const options: PersistentStateOptions<StateTree> = {
-        pickPaths: ['a'],
-      };
-
-      beforeEach(() => {
-        plugin({
-          store: storeStub,
-          options: {
-            persistentState: options,
-          },
-        } as PiniaPluginContext);
-      });
-
-      it('should create a PersistentStateManager and initialize it', () => {
-        expect(PersistentStateManager).toHaveBeenCalledTimes(1);
-        expect(PersistentStateManager).toHaveBeenCalledWith(storeStub, {
-          ...globalOptions,
-          ...options,
-        });
-
-        const instance: PersistentStateManager<StateTree> = vi.mocked(
-          PersistentStateManager,
-        ).mock.instances[0];
-
-        expect(instance.initialize).toHaveBeenCalledTimes(1);
-      });
-    });
-
-    describe('with options.persistentState as true', () => {
-      beforeEach(() => {
-        plugin({
-          store: storeStub,
-          options: {
-            persistentState: true,
-          },
-        } as PiniaPluginContext);
-      });
-
-      it('should create a PersistentStateManager and initialize it', () => {
-        expect(PersistentStateManager).toHaveBeenCalledTimes(1);
-        expect(PersistentStateManager).toHaveBeenCalledWith(
-          storeStub,
-          globalOptions,
+    describe('when called with global options', () => {
+      it('should pass key function to builder', () => {
+        const keyFn: KeyFn = (id: string): string => `custom-${id}`;
+        const globalOptions: GlobalPersistentStateOptions<StateTree> = {
+          key: keyFn,
+        };
+        const plugin: PiniaPlugin = createPersistentState(globalOptions);
+        context.options.persistentState = true;
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ key: keyFn }),
         );
+      });
 
-        const instance: PersistentStateManager<StateTree> = vi.mocked(
-          PersistentStateManager,
-        ).mock.instances[0];
+      it('should pass storage to builder', () => {
+        const storage: Storage = sessionStorage;
+        const globalOptions: GlobalPersistentStateOptions<StateTree> = {
+          storage,
+        };
+        const plugin: PiniaPlugin = createPersistentState(globalOptions);
+        context.options.persistentState = true;
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ storage }),
+        );
+      });
 
-        expect(instance.initialize).toHaveBeenCalledTimes(1);
+      it('should pass serialization functions to builder', () => {
+        const globalOptions: GlobalPersistentStateOptions<StateTree> = {
+          serialize: JSON.stringify,
+          deserialize: JSON.parse,
+        };
+        const plugin: PiniaPlugin = createPersistentState(globalOptions);
+        context.options.persistentState = true;
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({
+            serialize: JSON.stringify,
+            deserialize: JSON.parse,
+          }),
+        );
       });
     });
 
-    describe('with options.persistentState as falsy or absent', () => {
-      beforeEach(() => {
-        plugin({
-          store: storeStub,
-          options: {},
-        } as PiniaPluginContext);
+    describe('when called with local options', () => {
+      it('should pass pick paths to builder', () => {
+        const localOptions: LocalPersistentStateOptions<StateTree> = {
+          pickPaths: ['foo', 'bar'],
+        };
+        context.options.persistentState = localOptions;
+        const plugin: PiniaPlugin = createPersistentState();
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ pickPaths: ['foo', 'bar'] }),
+        );
       });
 
-      it('should not create any PersistentStateManager instances', () => {
-        expect(PersistentStateManager).not.toHaveBeenCalled();
+      it('should pass omit paths to builder', () => {
+        const localOptions: LocalPersistentStateOptions<StateTree> = {
+          omitPaths: ['baz', 'qux'],
+        };
+        context.options.persistentState = localOptions;
+        const plugin: PiniaPlugin = createPersistentState();
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({ omitPaths: ['baz', 'qux'] }),
+        );
+      });
+    });
+
+    describe('when called with combined options', () => {
+      it('should override global options with local options', () => {
+        const keyFn: KeyFn = (id: string): string => `global-${id}`;
+        const localKeyFn: KeyFn = (id: string): string => `local-${id}`;
+        const globalOptions: GlobalPersistentStateOptions<StateTree> = {
+          key: keyFn,
+          storage: sessionStorage,
+        };
+        const localOptions: LocalPersistentStateOptions<StateTree> = {
+          key: localKeyFn,
+          pickPaths: ['foo'],
+        };
+        context.options.persistentState = localOptions;
+        const plugin: PiniaPlugin = createPersistentState(globalOptions);
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).toHaveBeenCalledWith(
+          store,
+          expect.objectContaining({
+            key: localKeyFn,
+            storage: sessionStorage,
+            pickPaths: ['foo'],
+          }),
+        );
+      });
+    });
+
+    describe('when called with no options', () => {
+      it('should not create PersistentState', () => {
+        const plugin: PiniaPlugin = createPersistentState();
+        plugin(context);
+        expect(PersistentStateBuilder.fromOptions).not.toHaveBeenCalled();
+      });
+    });
+
+    describe('when store is disposing', () => {
+      it('should unpersist state before calling original dispose', () => {
+        const unpersistOrder: number[] = [];
+        const unpersistSpy = vi.fn(() => {
+          unpersistOrder.push(1);
+        });
+        const originalDisposeSpy = vi.fn(() => {
+          unpersistOrder.push(2);
+        });
+        persistentState.unpersist = unpersistSpy;
+        store.$dispose = originalDisposeSpy;
+        const plugin: PiniaPlugin = createPersistentState();
+        context.options.persistentState = true;
+        plugin(context);
+        context.store.$dispose();
+        expect(unpersistSpy).toHaveBeenCalled();
+        expect(originalDisposeSpy).toHaveBeenCalled();
+        expect(unpersistOrder).toEqual([1, 2]);
       });
     });
   });
