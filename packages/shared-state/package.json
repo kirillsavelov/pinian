@@ -1,6 +1,6 @@
 {
   "name": "@pinian/shared-state",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "This plugin enables effortless state synchronization between browser tabs for Pinia stores with a flexible, easy-to-use API. From simple defaults to advanced customizations like custom merge strategies and granular path control, it streamlines cross-tab state management, making it a perfect fit for any project requiring synchronized state.",
   "keywords": [
     "vue",
